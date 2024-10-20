@@ -32,7 +32,7 @@ const FleetTable = () => {
           params: {
             page: 1,
             location_name: searchQuery,
-            is_starred: filter === "Starred",
+            is_starred: filter === "ALL",
           },
         });
         const starredResponse = await axios.get("/starred_location_ids");
