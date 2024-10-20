@@ -1,6 +1,5 @@
-import { http, HttpResponse } from "msw";
-
-import { Location } from "./db";
+import { http, HttpResponse } from 'msw';
+import { Location, locations as dummyLocations } from './db';
 
 interface LocationsResult {
   total_count: number;
@@ -16,11 +15,42 @@ interface LocationsPathParams {
 
 export const handlers = [
   http.get<LocationsPathParams>("/locations", ({ params }) => {
-    // Please implement filtering feature here
+    console.log("params", params);
+    const page = parseInt(params.page) || 1;
+    const locationName = params.location_name || '';
+    const robotId = params.robot_id || '';
+    const isStarred = params.is_starred === 'true';
+
+    let filteredLocations = dummyLocations;
+
+    if (locationName) {
+      filteredLocations = filteredLocations.filter((location) =>
+        location.name.toLowerCase().includes(locationName.toLowerCase()),
+      );
+    }
+
+    if (robotId) {
+      filteredLocations = filteredLocations.filter(
+        (location) => location.robot.id === robotId,
+      );
+    }
+
+    if (isStarred) {
+      const starredLocationIds = JSON.parse(
+        sessionStorage.getItem("starred_location_ids") || "[]",
+      );
+
+      filteredLocations = filteredLocations.filter((location) =>
+        starredLocationIds.includes(location.id),
+      );
+    }
+
+    // const pageSize = 6;
+    // const paginatedLocations = filteredLocations.slice((page - 1) * pageSize, page * pageSize);
 
     const result: LocationsResult = {
-      total_count: 0,
-      locations: [],
+      total_count: filteredLocations.length,
+      locations: filteredLocations,
     };
 
     return HttpResponse.json(result);
@@ -43,7 +73,6 @@ export const handlers = [
         { status: 500 },
       );
     }
-
     sessionStorage.setItem(
       "starred_location_ids",
       JSON.stringify(request.body),
